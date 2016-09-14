@@ -78,7 +78,7 @@ void initCTEParams(CTEParams *);
 int doCteBias (WF3Info *, SingleGroup *);
 int GetCTEFlags (WF3Info *, Hdr *);
 int a2d_raz(WF3Info *);
-int raw2raz(WF3Info *, SingleGroup *, SingleGroup *, SingleGroup *);
+int raw2raz(WF3Info *, SingleGroup *, SingleGroup *, SingleGroup *, int);
 int raz2rsz(WF3Info *, SingleGroup *, SingleGroup *, double , int );
 int findPostScanBias(SingleGroup *, float *, float * );
 int findPreScanBias(SingleGroup *, float *, float *);

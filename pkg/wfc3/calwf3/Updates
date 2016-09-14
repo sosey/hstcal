@@ -1,3 +1,6 @@
+Updates for Version 3.4.1 14-Sep-2016 MLS
+    - This version enables CTE correction with all subarrays regardless of the presence of physical overscan pixels. In those cases the extra bias correction from the prescan is not performed.
+
 Updates for Version 3.4 14-Sep-2016 MLS
     - CTE subarrays enabled for user supported subarrays with physical overscan
 

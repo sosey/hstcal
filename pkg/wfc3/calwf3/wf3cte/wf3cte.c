@@ -104,6 +104,7 @@ int WF3cte (char *input, char *output, CCD_Switch *cte_sw,
     int rsize = 1;          /* reference pixel size */
     int start=0;            /*where the subarray starts*/
     int finish=0;           /*where the subarray ends*/
+    int overscan=1;      /*detect if physical overscan present in subarray*/
 
     /*check if this is a subarray image.
       This is necessary because the CTE routine will start with the raw images
@@ -120,8 +121,9 @@ int WF3cte (char *input, char *output, CCD_Switch *cte_sw,
       consistent with the current data being processed. I decided on masking which
       might allow for other considerations in future updates.
 
-      Only subarrays which were taken with physical overscan pixels are currently valid
-      This distinction can be made with the CRDS ruleset for PCTECORR but it
+      Only subarrays which were taken with physical overscan pixels can be used
+      for the prescan bias correction.  When none are present, this correction
+      is not performed. This distinction can be made with the CRDS ruleset for PCTECORR but it
       should also be checked here incase users update the header themselves for
       local runs. In order to check for overscan pixels I'm using the array start
       location instead of the APERTURE keyword information (there are known user
@@ -295,9 +297,9 @@ int WF3cte (char *input, char *output, CCD_Switch *cte_sw,
             start = sci_corner[0] - ref_corner[0];
             finish = start + subcd.sci.data.nx;
             if ( start >= 25 &&  finish + 60 <= (RAZ_COLS/2) - 25){
-                sprintf(MsgText,"Subarray not taken with physical overscan (%i %i)\nCan't perform CTE correction\n",start,finish);
+                sprintf(MsgText,"Subarray not taken with physical overscan (%i %i)\n",start,finish);
                 trlmessage(MsgText);
-                return(ERROR_RETURN);
+                overscan=0;
             }
 
             /*SAVE THE PCTETABLE INFORMATION TO THE HEADER OF THE SCIENCE IMAGE
@@ -358,9 +360,9 @@ int WF3cte (char *input, char *output, CCD_Switch *cte_sw,
             finish = start + subab.sci.data.nx + 2103;
             finish = start + subab.sci.data.nx;
             if ( start >= 25 &&  finish + 60 <= (RAZ_COLS/2) - 25){
-                sprintf(MsgText,"Subarray not taken with physical overscan (%i %i)\nCan't perform CTE correction\n",start,finish);
+                sprintf(MsgText,"Subarray not taken with physical overscan (%i %i)\n",start,finish);
                 trlmessage(MsgText);
-                return(ERROR_RETURN);
+                overscan=0;
             }
             /*add subarray to full frame image*/
             Sub2Full(&wf3, &subab, &ab, 0, 1, 1);
@@ -450,7 +452,7 @@ int WF3cte (char *input, char *output, CCD_Switch *cte_sw,
     }
 
     /*CONVERT TO RAZ, SUBTRACT BIAS AND CORRECT FOR GAIN*/
-    if (raw2raz(&wf3, &cd, &ab, &raz))
+    if (raw2raz(&wf3, &cd, &ab, &raz, overscan))
         return (status);
 
     /***CALCULATE THE SMOOTH READNOISE IMAGE***/
@@ -554,7 +556,7 @@ int WF3cte (char *input, char *output, CCD_Switch *cte_sw,
 
 /********************* SUPPORTING SUBROUTINES *****************************/
 
-int raw2raz(WF3Info *wf3, SingleGroup *cd, SingleGroup *ab, SingleGroup *raz){
+int raw2raz(WF3Info *wf3, SingleGroup *cd, SingleGroup *ab, SingleGroup *raz, int overscan){
     /*
 
        convert a raw file to raz file: CDAB longwise amps, save data array
@@ -622,7 +624,9 @@ int raw2raz(WF3Info *wf3, SingleGroup *cd, SingleGroup *ab, SingleGroup *raz){
       has prescan bias pixels so the regions are different for full and subarrays
     */
     if (wf3->subarray){
-        findPreScanBias(raz, bias_pre, bsig_pre);
+        if (overscan){
+            findPreScanBias(raz, bias_pre, bsig_pre);
+        }
         for (k=0;k<4;k++){
             for (i=0; i<subcol;i++){
                 for (j=0;j<RAZ_ROWS; j++){
